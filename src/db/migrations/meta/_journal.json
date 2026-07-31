@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1785483497170,
+      "tag": "0000_initial_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785485005620,
+      "tag": "0001_identity_security",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785486158465,
+      "tag": "0002_username_credentials",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785487386844,
+      "tag": "0003_admin_audit_logs",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785488012162,
+      "tag": "0004_complete_commerce_schema",
+      "breakpoints": true
+    }
+  ]
+}

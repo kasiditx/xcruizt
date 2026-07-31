@@ -1,0 +1,47 @@
+# Dependencies
+/node_modules/
+/.pnpm-store/
+
+# Next.js and Vercel
+/.next/
+/out/
+/.vercel/
+
+# Build and test output
+/dist/
+/build/
+/coverage/
+*.tsbuildinfo
+/playwright-report/
+/test-results/
+/blob-report/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs and local runtime files
+*.log
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+/tmp/
+/temp/
+
+# Private product assets
+/private-product-files/
+/uploads/
+/staging-uploads/
+
+# Local tooling and operating-system metadata
+/.code-review-graph/
+/.DS_Store
+Thumbs.db
+
+# Local agent context
+/docs/
+/AGENTS.md
+/CONTEXT.MD

@@ -15,6 +15,7 @@
 /playwright-report/
 /test-results/
 /blob-report/
+/output/
 
 # Environment and secrets
 .env
@@ -38,10 +39,10 @@
 
 # Local tooling and operating-system metadata
 /.code-review-graph/
+/.serena/
 /.DS_Store
 Thumbs.db
 
 # Local agent context
-/docs/
 /AGENTS.md
 /CONTEXT.MD

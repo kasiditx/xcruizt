@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { logServerError } from "@/lib/observability/logger";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   completeUsernameProfile,
@@ -9,6 +10,7 @@ import {
 } from "@/modules/identity/application/complete-profile";
 import { resolveSafeAuthRedirect } from "@/modules/identity/application/auth-redirect";
 import { ensureProfile } from "@/modules/identity/infrastructure/profile-repository";
+import { syncDiscordIdentityForAuthenticatedUser } from "@/modules/identity/infrastructure/discord-profile";
 
 export type CompleteProfileActionState = {
   status: "idle" | "error";
@@ -43,11 +45,14 @@ export async function completeProfileAction(
 
           return data.claims.sub;
         },
-        saveProfile: ensureProfile,
+        async saveProfile(input) {
+          await ensureProfile(input);
+          await syncDiscordIdentityForAuthenticatedUser(supabase);
+        },
       },
     );
-  } catch {
-    console.error("Unexpected profile completion failure.");
+  } catch (error) {
+    logServerError("identity.profile_completion_failed", {}, error);
 
     return {
       status: "error",

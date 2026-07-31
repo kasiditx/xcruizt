@@ -9,6 +9,7 @@ const appEnvironmentSchema = z
       .string()
       .url()
       .default("http://localhost:3000"),
+    NEXT_PUBLIC_MEDIA_ORIGIN: z.string().url().optional(),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
   })
   .superRefine((environment, context) => {
@@ -22,6 +23,18 @@ const appEnvironmentSchema = z
         code: "custom",
         message: "Production site URL must use HTTPS.",
         path: ["NEXT_PUBLIC_SITE_URL"],
+      });
+    }
+
+    if (
+      environment.APP_ENV === "production" &&
+      environment.NEXT_PUBLIC_MEDIA_ORIGIN &&
+      new URL(environment.NEXT_PUBLIC_MEDIA_ORIGIN).protocol !== "https:"
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Production media origin must use HTTPS.",
+        path: ["NEXT_PUBLIC_MEDIA_ORIGIN"],
       });
     }
   });

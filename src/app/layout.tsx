@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Chakra_Petch, Noto_Sans_Thai } from "next/font/google";
 
 import "./globals.css";
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
   },
   description:
     "ReShade presets for FiveM crafted for deliberate color, atmosphere, and clarity.",
+  alternates: { canonical: "/" },
   applicationName: "XCRUIZT",
   openGraph: {
     type: "website",
@@ -32,8 +34,18 @@ export const metadata: Metadata = {
     title: "XCRUIZT — ReShade Presets for FiveM",
     description:
       "ปรับแสง สี และบรรยากาศของ FiveM ด้วย ReShade preset จาก XCRUIZT",
+    images: [{ alt: "XCRUIZT ReShade presets", height: 630, url: "/opengraph-image", width: 1200 }],
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    description: "ReShade presets สำหรับ FiveM จาก XCRUIZT",
+    images: ["/opengraph-image"],
+    title: "XCRUIZT — ReShade Presets for FiveM",
   },
 };
+
+const speedInsightsEnabled = process.env.VERCEL === "1";
 
 export default function RootLayout({
   children,
@@ -46,6 +58,7 @@ export default function RootLayout({
         className={`${displayFont.variable} ${bodyFont.variable} antialiased`}
       >
         {children}
+        {speedInsightsEnabled ? <SpeedInsights /> : null}
       </body>
     </html>
   );

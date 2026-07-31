@@ -13,7 +13,10 @@ export const adminRoleSeedRows = [
   {
     name: "Support",
     description: "Read-only customer order support.",
-    permissions: [ADMIN_PERMISSIONS.readOrders],
+    permissions: [
+      ADMIN_PERMISSIONS.readOrders,
+      ADMIN_PERMISSIONS.manageDiscordSync,
+    ],
   },
   {
     name: "Catalog Manager",

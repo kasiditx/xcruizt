@@ -126,6 +126,7 @@ export const orders = pgTable(
     paymentProvider: paymentProvider("payment_provider")
       .default("stripe")
       .notNull(),
+    checkoutRequestId: uuid("checkout_request_id").unique(),
     providerCheckoutSessionId: text(
       "provider_checkout_session_id",
     ).unique(),

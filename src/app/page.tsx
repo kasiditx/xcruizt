@@ -1,32 +1,19 @@
 import {
   ArrowDownRight,
   ArrowRight,
-  CircleUserRound,
   ShieldCheck,
 } from "lucide-react";
 
-const collections = [
-  {
-    name: "CRUIZCTRL",
-    direction: "CONTROL / CLARITY",
-    description: "คุม contrast ให้ภาพคมชัด โดยยังรักษารายละเอียดในเงา",
-    accent: "violet",
-  },
-  {
-    name: "PRISMUTE",
-    direction: "CLEAN / NEUTRAL",
-    description: "บาลานซ์แสงให้สะอาด เป็นธรรมชาติ และเล่นได้นานสบายตา",
-    accent: "cyan",
-  },
-  {
-    name: "SEVORA",
-    direction: "7 DAYS / 7 MOODS",
-    description: "เจ็ดอารมณ์สีสำหรับแต่ละวัน ตั้งแต่ Mellow ถึง Scarlet",
-    accent: "scarlet",
-  },
-] as const;
+import { AccountControls } from "@/components/account/account-controls";
+import { listPublishedCollections } from "@/modules/catalog/infrastructure/storefront-repository";
+import { getCurrentAccountResolution } from "@/modules/identity/infrastructure/current-account";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [resolution, collections] = await Promise.all([
+    getCurrentAccountResolution(),
+    listPublishedCollections(),
+  ]);
+
   return (
     <main>
       <header className="site-header">
@@ -41,10 +28,7 @@ export default function HomePage() {
           <a href="#support">Support</a>
         </nav>
 
-        <a className="account-link" href="/auth/login">
-          <CircleUserRound aria-hidden="true" size={18} strokeWidth={1.7} />
-          <span>เข้าสู่ระบบ</span>
-        </a>
+        <AccountControls resolution={resolution} />
       </header>
 
       <section className="hero" id="top">
@@ -146,18 +130,26 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="collection-list">
+        {collections.length > 0 ? <div className="collection-list">
           {collections.map((collection, index) => (
             <article
-              className={`collection-row collection-row--${collection.accent}`}
+              className="collection-row"
               key={collection.name}
             >
               <span className="collection-index">
                 {String(index + 1).padStart(2, "0")}
               </span>
               <div>
-                <p>{collection.direction}</p>
-                <h3>{collection.name}</h3>
+                <p>
+                  {collection.tagline ??
+                    collection.accentKey ??
+                    "XCRUIZT COLLECTION"}
+                </p>
+                <h3>
+                  <a href={`/collections/${collection.slug}`}>
+                    {collection.name}
+                  </a>
+                </h3>
               </div>
               <p className="collection-description">
                 {collection.description}
@@ -169,7 +161,14 @@ export default function HomePage() {
               />
             </article>
           ))}
-        </div>
+        </div> : (
+          <div className="store-empty">
+            <h3>กำลังเตรียม Collection</h3>
+            <p>
+              หน้านี้จะแสดงเฉพาะ Collection ที่ Publish แล้วจาก Catalog
+            </p>
+          </div>
+        )}
       </section>
 
       <section className="process-section" id="process">

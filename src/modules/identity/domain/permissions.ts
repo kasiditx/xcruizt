@@ -4,6 +4,9 @@ export const ADMIN_PERMISSIONS = {
   readOrders: "orders.read",
   refundPayment: "payments.refund",
   grantEntitlement: "entitlements.grant",
+  manageDiscordSync: "discord.sync.manage",
+  writeDiscordMapping: "discord.mapping.write",
+  writeCoupon: "pricing.coupon.write",
   manageAdminRoles: "admin.roles.manage",
 } as const;
 
@@ -15,4 +18,12 @@ export function hasRequiredPermission(
   requiredPermission: AdminPermission,
 ): boolean {
   return grantedPermissions.has(requiredPermission);
+}
+
+export function hasAdminAccess(
+  grantedPermissions: ReadonlySet<string>,
+): boolean {
+  return Object.values(ADMIN_PERMISSIONS).some((permission) =>
+    grantedPermissions.has(permission),
+  );
 }

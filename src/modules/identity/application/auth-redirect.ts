@@ -22,3 +22,18 @@ export function resolveSafeAuthRedirect(
 
   return `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`;
 }
+
+export function resolveLoginPageRedirect(
+  accountStatus: "anonymous" | "profile_required" | "ready",
+  nextPath: string,
+): string | null {
+  if (accountStatus === "anonymous") {
+    return null;
+  }
+
+  if (accountStatus === "profile_required") {
+    return `/auth/complete-profile?next=${encodeURIComponent(nextPath)}`;
+  }
+
+  return nextPath;
+}

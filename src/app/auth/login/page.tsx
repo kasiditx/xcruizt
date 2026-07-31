@@ -1,8 +1,15 @@
 import { ArrowLeft, LockKeyhole, MessagesSquare } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { resolveSafeAuthRedirect } from "@/modules/identity/application/auth-redirect";
+import { getTurnstileSiteKey } from "@/lib/env/turnstile";
+import { env } from "@/lib/env/server";
+import {
+  resolveLoginPageRedirect,
+  resolveSafeAuthRedirect,
+} from "@/modules/identity/application/auth-redirect";
+import { getCurrentAccountResolution } from "@/modules/identity/infrastructure/current-account";
 
 import { signInWithDiscord } from "./actions";
 import { PasswordAuthForm } from "./password-auth-form";
@@ -25,6 +32,20 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { next } = await searchParams;
   const nextPath = resolveSafeAuthRedirect(next);
+  const resolution = await getCurrentAccountResolution();
+  const redirectPath = resolveLoginPageRedirect(
+    resolution.status,
+    nextPath,
+  );
+
+  if (redirectPath) {
+    redirect(redirectPath);
+  }
+
+  const turnstileSiteKey = getTurnstileSiteKey();
+  if (env.APP_ENV !== "local" && !turnstileSiteKey) {
+    throw new Error("Turnstile site key is required outside local development.");
+  }
 
   return (
     <main className="auth-page">
@@ -44,7 +65,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           โดยสิทธิ์ Admin จะถูกตรวจจาก Database ฝั่ง Server หลังเข้าสู่ระบบ
         </p>
 
-        <PasswordAuthForm nextPath={nextPath} />
+        <PasswordAuthForm
+          nextPath={nextPath}
+          turnstileSiteKey={turnstileSiteKey}
+        />
 
         <div className="auth-divider" aria-hidden="true">
           <span />
@@ -61,7 +85,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </form>
 
         <p className="auth-terms">
-          การเข้าสู่ระบบถือว่าคุณยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว
+          ระบบจะตรวจ Session และสิทธิ์การใช้งานจาก Server ทุกครั้ง
         </p>
       </section>
     </main>

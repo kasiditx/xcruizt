@@ -9,6 +9,9 @@ const descriptions = {
   [ADMIN_PERMISSIONS.readOrders]: "Read customer orders.",
   [ADMIN_PERMISSIONS.refundPayment]: "Refund successful payments.",
   [ADMIN_PERMISSIONS.grantEntitlement]: "Grant customer entitlements.",
+  [ADMIN_PERMISSIONS.manageDiscordSync]: "Retry customer Discord role sync.",
+  [ADMIN_PERMISSIONS.writeDiscordMapping]: "Manage Discord role mappings.",
+  [ADMIN_PERMISSIONS.writeCoupon]: "Create and manage coupons.",
   [ADMIN_PERMISSIONS.manageAdminRoles]: "Manage Admin role assignments.",
 } satisfies Record<AdminPermission, string>;
 

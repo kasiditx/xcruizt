@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import * as permissions from "./permissions";
 import {
   ADMIN_PERMISSIONS,
   hasRequiredPermission,
@@ -39,5 +40,30 @@ describe("hasRequiredPermission", () => {
         ADMIN_PERMISSIONS.refundPayment,
       ),
     ).toBe(false);
+  });
+});
+
+describe("hasAdminAccess", () => {
+  type AdminAccessResolver = (
+    grantedPermissions: ReadonlySet<string>,
+  ) => boolean;
+
+  const resolver = Reflect.get(
+    permissions,
+    "hasAdminAccess",
+  ) as AdminAccessResolver | undefined;
+
+  it("allows any database-backed Admin permission into the Admin shell", () => {
+    expect(
+      resolver?.(new Set([ADMIN_PERMISSIONS.publishVersion])),
+    ).toBe(true);
+  });
+
+  it("denies a customer without database-backed Admin permissions", () => {
+    expect(resolver?.(new Set())).toBe(false);
+  });
+
+  it("ignores an unknown permission code", () => {
+    expect(resolver?.(new Set(["unknown.permission"]))).toBe(false);
   });
 });

@@ -1,8 +1,19 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { env } from "@/lib/env/server";
+import { extractClientIp } from "@/lib/http/client-fingerprint";
+import {
+  logServerError,
+  logServerWarning,
+} from "@/lib/observability/logger";
+import {
+  consumeSecurityRateLimit,
+  type RateLimitScope,
+} from "@/lib/security/rate-limit";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveSafeAuthRedirect } from "@/modules/identity/application/auth-redirect";
 import {
@@ -42,7 +53,7 @@ function toActionError(
 }
 
 function unexpectedAuthError(operation: "signin" | "signup") {
-  console.error("Unexpected password authentication failure.", {
+  logServerError("auth.password_failed", {
     operation,
   });
 
@@ -52,10 +63,78 @@ function unexpectedAuthError(operation: "signin" | "signup") {
   };
 }
 
+async function enforcePasswordAuthRateLimit(
+  scope: Extract<RateLimitScope, "auth_signin" | "auth_signup">,
+  formData: FormData,
+  clientIp: string | null,
+): Promise<PasswordAuthActionState | null> {
+  const username = formData.get("username")?.toString() ?? "unknown";
+
+  try {
+    const decision = await consumeSecurityRateLimit(scope, [
+      clientIp,
+      username,
+    ]);
+    if (decision.allowed) return null;
+
+    logServerWarning("auth.rate_limited", { scope });
+    return {
+      status: "error",
+      message: "ลองเข้าสู่ระบบบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่",
+    };
+  } catch {
+    logServerError("auth.rate_limit_unavailable", { scope });
+    return {
+      status: "error",
+      message: "ระบบป้องกันการเข้าสู่ระบบขัดข้องชั่วคราว กรุณาลองใหม่",
+    };
+  }
+}
+
+async function enforceTurnstile(
+  action: "signin" | "signup",
+  formData: FormData,
+  clientIp: string | null,
+): Promise<PasswordAuthActionState | null> {
+  const result = await verifyTurnstile({
+    action,
+    remoteIp: clientIp,
+    token: formData.get("cf-turnstile-response"),
+  });
+  if (result === "verified") return null;
+
+  if (result === "invalid") {
+    logServerWarning("auth.turnstile_rejected", { action });
+    return {
+      status: "error",
+      message: "ยืนยันความปลอดภัยไม่สำเร็จ กรุณาลองใหม่",
+    };
+  }
+
+  return {
+    status: "error",
+    message: "ระบบยืนยันความปลอดภัยขัดข้องชั่วคราว กรุณาลองใหม่",
+  };
+}
+
 export async function signUpWithPassword(
   _previousState: PasswordAuthActionState,
   formData: FormData,
 ): Promise<PasswordAuthActionState> {
+  const clientIp = extractClientIp(await headers());
+  const rateLimitError = await enforcePasswordAuthRateLimit(
+    "auth_signup",
+    formData,
+    clientIp,
+  );
+  if (rateLimitError) return rateLimitError;
+  const turnstileError = await enforceTurnstile(
+    "signup",
+    formData,
+    clientIp,
+  );
+  if (turnstileError) return turnstileError;
+
   let result: PasswordAuthResult;
   try {
     const supabase = await createSupabaseServerClient();
@@ -102,6 +181,20 @@ export async function signInWithPassword(
   _previousState: PasswordAuthActionState,
   formData: FormData,
 ): Promise<PasswordAuthActionState> {
+  const clientIp = extractClientIp(await headers());
+  const rateLimitError = await enforcePasswordAuthRateLimit(
+    "auth_signin",
+    formData,
+    clientIp,
+  );
+  if (rateLimitError) return rateLimitError;
+  const turnstileError = await enforceTurnstile(
+    "signin",
+    formData,
+    clientIp,
+  );
+  if (turnstileError) return turnstileError;
+
   let result: PasswordAuthResult;
   try {
     const supabase = await createSupabaseServerClient();

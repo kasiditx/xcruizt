@@ -3,6 +3,7 @@
 import { LogIn, UserPlus } from "lucide-react";
 import { useActionState, useState } from "react";
 
+import { TurnstileWidget } from "@/components/security/turnstile-widget";
 import {
   signInWithPassword,
   signUpWithPassword,
@@ -27,9 +28,11 @@ function getSubmitLabel(isSignup: boolean, isPending: boolean) {
 function CredentialForm({
   mode,
   nextPath,
+  turnstileSiteKey,
 }: {
   mode: AuthMode;
   nextPath: string;
+  turnstileSiteKey: string | null;
 }) {
   const action =
     mode === "signup" ? signUpWithPassword : signInWithPassword;
@@ -86,6 +89,14 @@ function CredentialForm({
         />
       </div>
 
+      {turnstileSiteKey ? (
+        <TurnstileWidget
+          action={mode}
+          resetSignal={state.message}
+          siteKey={turnstileSiteKey}
+        />
+      ) : null}
+
       <button className="auth-submit" disabled={isPending} type="submit">
         {isSignup ? (
           <UserPlus aria-hidden="true" size={17} />
@@ -109,7 +120,13 @@ function CredentialForm({
   );
 }
 
-export function PasswordAuthForm({ nextPath }: { nextPath: string }) {
+export function PasswordAuthForm({
+  nextPath,
+  turnstileSiteKey,
+}: {
+  nextPath: string;
+  turnstileSiteKey: string | null;
+}) {
   const [mode, setMode] = useState<AuthMode>("signin");
 
   return (
@@ -134,7 +151,12 @@ export function PasswordAuthForm({ nextPath }: { nextPath: string }) {
         </button>
       </fieldset>
 
-      <CredentialForm key={mode} mode={mode} nextPath={nextPath} />
+      <CredentialForm
+        key={mode}
+        mode={mode}
+        nextPath={nextPath}
+        turnstileSiteKey={turnstileSiteKey}
+      />
     </>
   );
 }

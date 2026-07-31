@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveSafeAuthRedirect } from "@/modules/identity/application/auth-redirect";
+import { syncDiscordIdentityForAuthenticatedUser } from "@/modules/identity/infrastructure/discord-profile";
 
 const AUTH_ERROR_PATH = "/auth/error";
 
@@ -30,6 +31,18 @@ export async function GET(request: NextRequest) {
   const redirectPath = resolveSafeAuthRedirect(
     request.nextUrl.searchParams.get("next"),
   );
+  try {
+    const discordSync =
+      await syncDiscordIdentityForAuthenticatedUser(supabase);
+    if (discordSync === "synced") {
+      return NextResponse.redirect(
+        new URL(redirectPath, env.NEXT_PUBLIC_SITE_URL),
+      );
+    }
+  } catch {
+    return createAuthErrorResponse("identity_link_failed");
+  }
+
   const profileCompletionUrl = new URL(
     "/auth/complete-profile",
     env.NEXT_PUBLIC_SITE_URL,

@@ -12,6 +12,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -97,6 +98,7 @@ export const outboxEvents = pgTable(
     topic: text("topic").notNull(),
     aggregateType: text("aggregate_type").notNull(),
     aggregateId: uuid("aggregate_id").notNull(),
+    dedupeKey: text("dedupe_key").unique(),
     payload: jsonb("payload").notNull(),
     status: outboxStatus("status").default("pending").notNull(),
     attemptCount: integer("attempt_count").default(0).notNull(),
@@ -104,6 +106,8 @@ export const outboxEvents = pgTable(
       .defaultNow()
       .notNull(),
     lastError: text("last_error"),
+    providerMessageId: text("provider_message_id"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -148,6 +152,14 @@ export const discordRoleMappings = pgTable(
       table.discordGuildId,
       table.discordRoleId,
     ),
+    uniqueIndex("discord_role_mappings_product_role_unique")
+      .on(table.discordGuildId, table.discordRoleId, table.productId)
+      .where(
+        sql`${table.productId} is not null and ${table.isActive} = true`,
+      ),
+    uniqueIndex("discord_role_mappings_sku_role_unique")
+      .on(table.discordGuildId, table.discordRoleId, table.skuId)
+      .where(sql`${table.skuId} is not null and ${table.isActive} = true`),
     check(
       "discord_role_mappings_single_source",
       sql`num_nonnulls(${table.skuId}, ${table.productId}) = 1`,
@@ -166,7 +178,14 @@ export const discordSyncJobs = pgTable(
     status: discordSyncStatus("status").default("pending").notNull(),
     attemptCount: integer("attempt_count").default(0).notNull(),
     lastError: text("last_error"),
+    availableAt: timestamp("available_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -177,6 +196,13 @@ export const discordSyncJobs = pgTable(
       table.status,
       table.createdAt,
     ),
+    index("discord_sync_jobs_status_available_at_idx").on(
+      table.status,
+      table.availableAt,
+    ),
+    uniqueIndex("discord_sync_jobs_active_user_unique")
+      .on(table.userId)
+      .where(sql`${table.status} in ('pending', 'running')`),
     check(
       "discord_sync_jobs_attempt_count_nonnegative",
       sql`${table.attemptCount} >= 0`,

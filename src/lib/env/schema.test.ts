@@ -15,14 +15,26 @@ describe("parseAppEnvironment", () => {
     expect(
       parseAppEnvironment({
         APP_ENV: "production",
+        NEXT_PUBLIC_MEDIA_ORIGIN: "https://media.xcruizt.example",
         NEXT_PUBLIC_SITE_URL: "https://xcruizt.example",
         LOG_LEVEL: "warn",
       }),
     ).toEqual({
       APP_ENV: "production",
+      NEXT_PUBLIC_MEDIA_ORIGIN: "https://media.xcruizt.example",
       NEXT_PUBLIC_SITE_URL: "https://xcruizt.example",
       LOG_LEVEL: "warn",
     });
+  });
+
+  it("rejects an insecure production media origin", () => {
+    expect(() =>
+      parseAppEnvironment({
+        APP_ENV: "production",
+        NEXT_PUBLIC_MEDIA_ORIGIN: "http://media.xcruizt.example",
+        NEXT_PUBLIC_SITE_URL: "https://xcruizt.example",
+      }),
+    ).toThrow("Production media origin must use HTTPS.");
   });
 
   it("rejects an insecure production site URL", () => {

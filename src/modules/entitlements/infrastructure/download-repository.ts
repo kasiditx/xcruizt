@@ -14,14 +14,16 @@ import {
   files,
   productVersions,
   profiles,
+  skuEntitlements,
 } from "@/db/schema";
 
 export type AuthorizedDownload = {
   contentType: string;
-  entitlementId: string;
+  entitlementId: string | null;
   fileId: string;
   orderId: string | null;
   originalFilename: string;
+  skuEntitlementId: string | null;
   storageBucket: string;
   storageKey: string;
 };
@@ -69,7 +71,47 @@ export async function authorizeProductDownload(
     )
     .limit(1);
 
-  return download ?? null;
+  return download
+    ? { ...download, skuEntitlementId: null }
+    : null;
+}
+
+export async function authorizeSkuPackageDownload(
+  userId: string,
+  skuId: string,
+  fileId: string,
+): Promise<AuthorizedDownload | null> {
+  const [download] = await db
+    .select({
+      contentType: files.contentType,
+      fileId: files.id,
+      orderId: skuEntitlements.sourceOrderId,
+      originalFilename: files.originalFilename,
+      skuEntitlementId: skuEntitlements.id,
+      storageBucket: files.storageBucket,
+      storageKey: files.storageKey,
+    })
+    .from(skuEntitlements)
+    .innerJoin(profiles, eq(profiles.id, skuEntitlements.userId))
+    .innerJoin(
+      files,
+      and(
+        eq(files.skuId, skuEntitlements.skuId),
+        eq(files.id, fileId),
+        eq(files.status, "active"),
+      ),
+    )
+    .where(
+      and(
+        eq(skuEntitlements.userId, userId),
+        eq(skuEntitlements.skuId, skuId),
+        eq(skuEntitlements.status, "active"),
+        eq(profiles.customerStatus, "active"),
+      ),
+    )
+    .limit(1);
+
+  return download ? { ...download, entitlementId: null } : null;
 }
 
 export async function getRecentDownloadAttemptCounts(input: {
@@ -124,6 +166,7 @@ export async function recordDownloadEvent(input: {
     ipHash: input.ipHash,
     orderId: input.download.orderId,
     result: input.result,
+    skuEntitlementId: input.download.skuEntitlementId,
     userAgentHash: input.userAgentHash,
     userId: input.userId,
   });

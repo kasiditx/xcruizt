@@ -18,6 +18,7 @@ import { consumeSecurityRateLimits } from "@/lib/security/rate-limit";
 import { evaluateDownloadRateLimit } from "@/modules/entitlements/application/download-policy";
 import {
   authorizeProductDownload,
+  authorizeSkuPackageDownload,
   getRecentDownloadAttemptCounts,
   recordDownloadEvent,
 } from "@/modules/entitlements/infrastructure/download-repository";
@@ -30,10 +31,15 @@ import { getCurrentAccountResolution } from "@/modules/identity/infrastructure/c
 const DOWNLOAD_WINDOW_MS = 60 * 60 * 1000;
 const DOWNLOAD_USER_LIMIT = 10;
 const DOWNLOAD_IP_LIMIT = 30;
-const downloadRequestSchema = z.object({
-  fileId: z.uuid(),
-  productId: z.uuid(),
-});
+const downloadRequestSchema = z
+  .object({
+    fileId: z.uuid(),
+    productId: z.uuid().optional(),
+    skuId: z.uuid().optional(),
+  })
+  .refine(({ productId, skuId }) => Boolean(productId) !== Boolean(skuId), {
+    message: "Exactly one download owner is required.",
+  });
 
 function response(
   requestId: string,
@@ -130,11 +136,17 @@ export async function POST(request: Request) {
     });
   }
 
-  const download = await authorizeProductDownload(
-    resolution.account.id,
-    parsed.data.productId,
-    parsed.data.fileId,
-  );
+  const download = parsed.data.productId
+    ? await authorizeProductDownload(
+        resolution.account.id,
+        parsed.data.productId,
+        parsed.data.fileId,
+      )
+    : await authorizeSkuPackageDownload(
+        resolution.account.id,
+        parsed.data.skuId!,
+        parsed.data.fileId,
+      );
   if (!download) {
     return response(requestId, 404, {
       error: { code: "download_not_available" },

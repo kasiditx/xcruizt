@@ -16,6 +16,7 @@ import {
   outboxEvents,
   payments,
   refunds,
+  skuEntitlements,
   skuProducts,
 } from "@/db/schema";
 
@@ -144,6 +145,51 @@ async function applySuccessfulFullRefund(
           status: "revoked",
         })
         .where(eq(entitlements.id, entitlement.entitlementId));
+    }
+  }
+
+  const packagesOwnedByOrder = await transaction
+    .select({
+      skuEntitlementId: skuEntitlements.id,
+      skuId: skuEntitlements.skuId,
+    })
+    .from(skuEntitlements)
+    .where(
+      and(
+        eq(skuEntitlements.sourceOrderId, payment.orderId),
+        eq(skuEntitlements.status, "active"),
+      ),
+    );
+
+  for (const packageEntitlement of packagesOwnedByOrder) {
+    const [alternateOrder] = await transaction
+      .select({ id: orders.id })
+      .from(orders)
+      .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
+      .where(
+        and(
+          eq(orders.userId, payment.userId),
+          eq(orders.status, "paid"),
+          ne(orders.id, payment.orderId),
+          eq(orderItems.skuId, packageEntitlement.skuId),
+        ),
+      )
+      .limit(1);
+
+    if (alternateOrder) {
+      await transaction
+        .update(skuEntitlements)
+        .set({ sourceOrderId: alternateOrder.id })
+        .where(eq(skuEntitlements.id, packageEntitlement.skuEntitlementId));
+    } else {
+      await transaction
+        .update(skuEntitlements)
+        .set({
+          revokedAt: now,
+          revokedReason: `Full refund ${providerRefundId}`,
+          status: "revoked",
+        })
+        .where(eq(skuEntitlements.id, packageEntitlement.skuEntitlementId));
     }
   }
 }

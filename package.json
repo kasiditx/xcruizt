@@ -19,6 +19,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed:permissions": "tsx src/db/seeds/run-admin-permissions.ts",
     "db:seed:authorization": "tsx src/db/seeds/run-admin-authorization.ts",
+    "db:seed:catalog": "tsx src/db/seeds/run-catalog.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {

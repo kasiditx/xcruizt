@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "files_sku_main_package_active_unique" ON "files" USING btree ("sku_id") WHERE "files"."sku_id" is not null and "files"."file_role" = 'main_package' and "files"."status" = 'active';

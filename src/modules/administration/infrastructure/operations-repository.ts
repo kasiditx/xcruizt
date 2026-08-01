@@ -4,6 +4,7 @@ import {
   countDistinct,
   desc,
   eq,
+  sql,
 } from "drizzle-orm";
 
 import { db } from "@/db/client";
@@ -16,6 +17,8 @@ import {
   products,
   profiles,
   refunds,
+  skuEntitlements,
+  skus,
   webhookEvents,
 } from "@/db/schema";
 
@@ -162,14 +165,19 @@ export function listAdminDownloads() {
     .select({
       createdAt: downloadEvents.createdAt,
       id: downloadEvents.id,
-      productName: products.name,
+      productName: sql<string>`coalesce(${products.name}, ${skus.name}, 'Unknown package')`,
       result: downloadEvents.result,
       username: profiles.username,
     })
     .from(downloadEvents)
     .innerJoin(profiles, eq(profiles.id, downloadEvents.userId))
-    .innerJoin(entitlements, eq(entitlements.id, downloadEvents.entitlementId))
-    .innerJoin(products, eq(products.id, entitlements.productId))
+    .leftJoin(entitlements, eq(entitlements.id, downloadEvents.entitlementId))
+    .leftJoin(products, eq(products.id, entitlements.productId))
+    .leftJoin(
+      skuEntitlements,
+      eq(skuEntitlements.id, downloadEvents.skuEntitlementId),
+    )
+    .leftJoin(skus, eq(skus.id, skuEntitlements.skuId))
     .orderBy(desc(downloadEvents.createdAt))
     .limit(ADMIN_LIST_LIMIT);
 }

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   pgEnum,
   pgPolicy,
@@ -11,7 +12,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { files, products } from "./catalog";
+import { files, products, skus } from "./catalog";
 import { orders } from "./commerce";
 import { profiles } from "./identity";
 
@@ -73,6 +74,45 @@ export const entitlements = pgTable(
   ],
 ).enableRLS();
 
+export const skuEntitlements = pgTable(
+  "sku_entitlements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id),
+    skuId: uuid("sku_id")
+      .notNull()
+      .references(() => skus.id),
+    sourceOrderId: uuid("source_order_id").references(() => orders.id),
+    sourceType: entitlementSourceType("source_type").notNull(),
+    status: entitlementStatus("status").default("active").notNull(),
+    grantedAt: timestamp("granted_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedReason: text("revoked_reason"),
+  },
+  (table) => [
+    unique("sku_entitlements_user_sku_source_order_unique").on(
+      table.userId,
+      table.skuId,
+      table.sourceOrderId,
+    ),
+    uniqueIndex("sku_entitlements_active_owner_unique")
+      .on(table.userId, table.skuId)
+      .where(sql`${table.status} = 'active'`),
+    index("sku_entitlements_user_id_idx").on(table.userId),
+    index("sku_entitlements_sku_id_idx").on(table.skuId),
+    index("sku_entitlements_source_order_id_idx").on(table.sourceOrderId),
+    pgPolicy("sku_entitlements_select_own", {
+      for: "select",
+      to: "authenticated",
+      using: sql`(select auth.uid()) = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
 export const downloadEvents = pgTable(
   "download_events",
   {
@@ -80,9 +120,10 @@ export const downloadEvents = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profiles.id),
-    entitlementId: uuid("entitlement_id")
-      .notNull()
-      .references(() => entitlements.id),
+    entitlementId: uuid("entitlement_id").references(() => entitlements.id),
+    skuEntitlementId: uuid("sku_entitlement_id").references(
+      () => skuEntitlements.id,
+    ),
     fileId: uuid("file_id")
       .notNull()
       .references(() => files.id),
@@ -102,11 +143,23 @@ export const downloadEvents = pgTable(
       table.createdAt,
     ),
     index("download_events_entitlement_id_idx").on(table.entitlementId),
+    index("download_events_sku_entitlement_id_idx").on(
+      table.skuEntitlementId,
+    ),
     index("download_events_file_id_idx").on(table.fileId),
     index("download_events_order_id_idx").on(table.orderId),
     index("download_events_result_created_at_idx").on(
       table.result,
       table.createdAt,
+    ),
+    pgPolicy("download_events_owner_select_own", {
+      for: "select",
+      to: "authenticated",
+      using: sql`(select auth.uid()) = ${table.userId}`,
+    }),
+    check(
+      "download_events_single_entitlement",
+      sql`num_nonnulls(${table.entitlementId}, ${table.skuEntitlementId}) = 1`,
     ),
   ],
 ).enableRLS();

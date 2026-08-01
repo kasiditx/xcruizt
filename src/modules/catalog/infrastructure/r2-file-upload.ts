@@ -10,7 +10,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 import type { R2Environment } from "@/lib/env/r2";
 import { hasExpectedFileSignature } from "../application/file-signature";
-import type { FileUploadInput } from "../application/file-upload-input";
+import type {
+  FileUploadInput,
+  SkuPackageUploadInput,
+} from "../application/file-upload-input";
 
 const UPLOAD_URL_TTL_SECONDS = 5 * 60;
 
@@ -28,7 +31,7 @@ function createR2Client(environment: R2Environment): S3Client {
 export async function createR2UploadUrl(input: {
   environment: R2Environment;
   storageKey: string;
-  upload: FileUploadInput;
+  upload: FileUploadInput | SkuPackageUploadInput;
 }): Promise<{
   expiresInSeconds: number;
   headers: Record<string, string>;

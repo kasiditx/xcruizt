@@ -8,6 +8,7 @@ import { DownloadButton } from "@/components/account/download-button";
 import {
   getLibraryDownloadFilesForUser,
   getLibraryItemsForUser,
+  getLibrarySkuPackageFilesForUser,
 } from "@/modules/entitlements/infrastructure/library-repository";
 import { getCurrentAccountResolution } from "@/modules/identity/infrastructure/current-account";
 
@@ -31,9 +32,10 @@ export default async function LibraryPage() {
     redirect("/auth/complete-profile?next=/account/library");
   }
 
-  const [libraryItems, downloadFiles] = await Promise.all([
+  const [libraryItems, downloadFiles, skuPackageFiles] = await Promise.all([
     getLibraryItemsForUser(resolution.account.id),
     getLibraryDownloadFilesForUser(resolution.account.id),
+    getLibrarySkuPackageFilesForUser(resolution.account.id),
   ]);
   const fileRoleLabels = {
     checksum: "Checksum",
@@ -46,7 +48,8 @@ export default async function LibraryPage() {
     string,
     typeof downloadFiles
   >();
-  for (const file of downloadFiles) {
+  const hasSkuPackages = skuPackageFiles.length > 0;
+  for (const file of hasSkuPackages ? [] : downloadFiles) {
     const productFiles =
       downloadFilesByProduct.get(file.productId) ?? [];
     productFiles.push(file);
@@ -66,6 +69,31 @@ export default async function LibraryPage() {
             <h1 id="library-title">Library</h1>
           </div>
         </div>
+
+        {hasSkuPackages ? (
+          <section aria-labelledby="package-downloads-title" className="account-library__packages">
+            <div className="account-library__title">
+              <PackageOpen aria-hidden="true" size={22} />
+              <div>
+                <p className="section-kicker">PURCHASED PACKAGES</p>
+                <h2 id="package-downloads-title">ไฟล์ที่ซื้อ</h2>
+              </div>
+            </div>
+            <ul aria-label="ไฟล์ Package ที่ซื้อ" className="library-card__downloads">
+              {skuPackageFiles.map((file) => (
+                <li key={file.fileId}>
+                  <DownloadButton
+                    fileId={file.fileId}
+                    filename={file.originalFilename}
+                    label={`ดาวน์โหลด ${file.skuType === "single" ? "Preset" : "Package"}`}
+                    skuId={file.skuId}
+                  />
+                  <span>{file.skuName}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {libraryItems.length === 0 ? (
           <div className="account-empty">
@@ -121,7 +149,7 @@ export default async function LibraryPage() {
                       />
                     ),
                   )}
-                  {!downloadFilesByProduct.has(item.productId) ? (
+                  {!hasSkuPackages && !downloadFilesByProduct.has(item.productId) ? (
                     <p className="library-card__files-pending">
                       ยังไม่มี Active file ในเวอร์ชันนี้
                     </p>

@@ -9,6 +9,8 @@ import {
   files,
   products,
   productVersions,
+  skuEntitlements,
+  skus,
 } from "@/db/schema";
 
 import {
@@ -62,6 +64,16 @@ export type LibraryDownloadFile = {
   productId: string;
 };
 
+export type LibrarySkuPackageFile = {
+  fileId: string;
+  fileRole: "main_package";
+  originalFilename: string;
+  skuEntitlementId: string;
+  skuId: string;
+  skuName: string;
+  skuType: "single" | "collection" | "bundle";
+};
+
 export async function getLibraryDownloadFilesForUser(
   userId: string,
 ): Promise<LibraryDownloadFile[]> {
@@ -95,4 +107,41 @@ export async function getLibraryDownloadFilesForUser(
       ),
     )
     .orderBy(files.fileRole, files.originalFilename);
+}
+
+export async function getLibrarySkuPackageFilesForUser(
+  userId: string,
+): Promise<LibrarySkuPackageFile[]> {
+  const filesForUser = await db
+    .select({
+      fileId: files.id,
+      fileRole: files.fileRole,
+      originalFilename: files.originalFilename,
+      skuEntitlementId: skuEntitlements.id,
+      skuId: skus.id,
+      skuName: skus.name,
+      skuType: skus.skuType,
+    })
+    .from(skuEntitlements)
+    .innerJoin(skus, eq(skus.id, skuEntitlements.skuId))
+    .innerJoin(
+      files,
+      and(
+        eq(files.skuId, skuEntitlements.skuId),
+        eq(files.fileRole, "main_package"),
+        eq(files.status, "active"),
+      ),
+    )
+    .where(
+      and(
+        eq(skuEntitlements.userId, userId),
+        eq(skuEntitlements.status, "active"),
+      ),
+    )
+    .orderBy(skus.name, files.originalFilename);
+
+  return filesForUser.map((file) => ({
+    ...file,
+    fileRole: "main_package" as const,
+  }));
 }

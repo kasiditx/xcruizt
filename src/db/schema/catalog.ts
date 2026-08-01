@@ -235,9 +235,10 @@ export const files = pgTable(
   "files",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    productVersionId: uuid("product_version_id")
-      .notNull()
-      .references(() => productVersions.id),
+    productVersionId: uuid("product_version_id").references(
+      () => productVersions.id,
+    ),
+    skuId: uuid("sku_id").references(() => skus.id),
     fileRole: fileRole("file_role").notNull(),
     storageProvider: storageProvider("storage_provider")
       .default("r2")
@@ -255,7 +256,17 @@ export const files = pgTable(
   },
   (table) => [
     index("files_product_version_id_idx").on(table.productVersionId),
+    index("files_sku_id_idx").on(table.skuId),
     index("files_status_idx").on(table.status),
+    uniqueIndex("files_sku_main_package_active_unique")
+      .on(table.skuId)
+      .where(
+        sql`${table.skuId} is not null and ${table.fileRole} = 'main_package' and ${table.status} = 'active'`,
+      ),
+    check(
+      "files_single_owner",
+      sql`num_nonnulls(${table.productVersionId}, ${table.skuId}) = 1`,
+    ),
     check(
       "files_file_size_bytes_nonnegative",
       sql`${table.fileSizeBytes} >= 0`,

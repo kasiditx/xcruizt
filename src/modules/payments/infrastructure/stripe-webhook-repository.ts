@@ -14,6 +14,7 @@ import {
   orders,
   outboxEvents,
   payments,
+  skuEntitlements,
   skuProducts,
   webhookEvents,
 } from "@/db/schema";
@@ -251,6 +252,11 @@ export async function fulfillPaidCheckout(
       )
       .where(eq(orderItems.orderId, input.orderId));
 
+    const skuRows = await transaction
+      .selectDistinct({ skuId: orderItems.skuId })
+      .from(orderItems)
+      .where(eq(orderItems.orderId, input.orderId));
+
     if (productRows.length === 0) {
       return {
         reason: "order_has_no_products",
@@ -310,6 +316,18 @@ export async function fulfillPaidCheckout(
       .values(
         productRows.map(({ productId }) => ({
           productId,
+          sourceOrderId: input.orderId,
+          sourceType: "order" as const,
+          userId: order.userId,
+        })),
+      )
+      .onConflictDoNothing();
+
+    await transaction
+      .insert(skuEntitlements)
+      .values(
+        skuRows.map(({ skuId }) => ({
+          skuId,
           sourceOrderId: input.orderId,
           sourceType: "order" as const,
           userId: order.userId,

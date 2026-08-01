@@ -6,9 +6,10 @@ Entitlement และ Download permission
 
 ## สถานะปัจจุบัน
 
-โค้ดของ Commerce MVP ครบขอบเขต **Phase 0–5** แล้ว โดยไม่มีการ seed สินค้าหรือ
-รายการซื้อปลอม ระบบจะแสดง empty state จนกว่า Admin จะสร้างและ Publish Catalog
-จริง
+โค้ดของ Commerce MVP ครบขอบเขต **Phase 0–5** แล้ว มี Catalog seed จริงในสถานะ
+`draft` ตาม Product Requirements แต่ยังไม่มีไฟล์สินค้า/รูปภาพหรือรายการซื้อปลอม
+ระบบ Storefront จะแสดง empty state จนกว่า Admin จะเติมไฟล์ ตรวจข้อมูล และ Publish
+Catalog จริง
 
 ### สิ่งที่ทำแล้วใน codebase
 
@@ -173,7 +174,13 @@ pnpm db:generate --name=descriptive_migration_name
 ```bash
 pnpm db:migrate
 pnpm db:seed:authorization
+pnpm db:seed:catalog
 ```
+
+`db:seed:catalog` สร้างข้อมูล Catalog ตาม Product Requirements แบบ idempotent:
+3 Collections, 22 Products, 26 draft SKUs, 66 SKU-to-Product grants และ 22
+draft Product Versions (`1.0.0`) พร้อม audit log โดยยังไม่สร้างไฟล์ ZIP หรือรูปภาพ
+แทนข้อมูลที่เจ้าของร้านยังไม่ได้ส่งให้
 
 ## Quality gates
 

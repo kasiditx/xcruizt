@@ -7,7 +7,8 @@ type DownloadButtonProps = {
   fileId: string;
   filename: string;
   label: string;
-  productId: string;
+  productId?: string;
+  skuId?: string;
 };
 
 export function DownloadButton({
@@ -15,6 +16,7 @@ export function DownloadButton({
   filename,
   label,
   productId,
+  skuId,
 }: DownloadButtonProps) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +27,7 @@ export function DownloadButton({
 
     try {
       const response = await fetch("/api/downloads", {
-        body: JSON.stringify({ fileId, productId }),
+        body: JSON.stringify({ fileId, productId, skuId }),
         headers: { "content-type": "application/json" },
         method: "POST",
       });

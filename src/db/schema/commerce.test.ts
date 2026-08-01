@@ -16,6 +16,7 @@ const blueprintTables = {
   payments: "payments",
   refunds: "refunds",
   entitlements: "entitlements",
+  skuEntitlements: "sku_entitlements",
   downloadEvents: "download_events",
   coupons: "coupons",
   couponRedemptions: "coupon_redemptions",
@@ -94,6 +95,7 @@ const blueprintColumns: Record<keyof typeof blueprintTables, string[]> = {
   files: [
     "id",
     "product_version_id",
+    "sku_id",
     "file_role",
     "storage_provider",
     "storage_bucket",
@@ -104,6 +106,17 @@ const blueprintColumns: Record<keyof typeof blueprintTables, string[]> = {
     "sha256",
     "status",
     "created_at",
+  ],
+  skuEntitlements: [
+    "id",
+    "user_id",
+    "sku_id",
+    "source_order_id",
+    "source_type",
+    "status",
+    "granted_at",
+    "revoked_at",
+    "revoked_reason",
   ],
   productImages: [
     "id",
@@ -193,6 +206,7 @@ const blueprintColumns: Record<keyof typeof blueprintTables, string[]> = {
     "id",
     "user_id",
     "entitlement_id",
+    "sku_entitlement_id",
     "file_id",
     "order_id",
     "ip_hash",
@@ -405,7 +419,11 @@ describe("complete commerce database schema", () => {
     const expectedIndexes = {
       products: ["products_collection_id_idx"],
       productVersions: ["product_versions_created_by_idx"],
-      files: ["files_product_version_id_idx"],
+      files: [
+        "files_product_version_id_idx",
+        "files_sku_id_idx",
+        "files_sku_main_package_active_unique",
+      ],
       productImages: [
         "product_images_product_id_idx",
         "product_images_collection_id_idx",
@@ -422,6 +440,7 @@ describe("complete commerce database schema", () => {
       downloadEvents: [
         "download_events_user_id_created_at_idx",
         "download_events_entitlement_id_idx",
+        "download_events_sku_entitlement_id_idx",
         "download_events_file_id_idx",
         "download_events_order_id_idx",
       ],
@@ -468,7 +487,6 @@ describe("complete commerce database schema", () => {
       schema.files,
       schema.payments,
       schema.refunds,
-      schema.downloadEvents,
       schema.coupons,
       schema.couponRedemptions,
       schema.webhookEvents,
@@ -485,6 +503,8 @@ describe("complete commerce database schema", () => {
       orders: ["orders_select_own"],
       orderItems: ["order_items_select_own"],
       entitlements: ["entitlements_select_own"],
+      skuEntitlements: ["sku_entitlements_select_own"],
+      downloadEvents: ["download_events_owner_select_own"],
     } as const;
 
     for (const [exportName, expectedNames] of Object.entries(

@@ -32,6 +32,15 @@ const usernameCredentialsSchema = z.object({
 
 export type UsernameCredentials = z.infer<typeof usernameCredentialsSchema>;
 
+export function passwordsMatch(password: unknown, confirmation: unknown): boolean {
+  return (
+    typeof password === "string" &&
+    typeof confirmation === "string" &&
+    password.length > 0 &&
+    password === confirmation
+  );
+}
+
 export function parseUsername(value: unknown): string {
   return usernameSchema.parse(value);
 }

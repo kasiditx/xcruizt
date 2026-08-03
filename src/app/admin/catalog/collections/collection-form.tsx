@@ -2,7 +2,9 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import type { AdminCollection } from "@/modules/catalog/infrastructure/admin-collection-repository";
 
 import type { CollectionActionState } from "./actions";
@@ -17,26 +19,9 @@ type CollectionFormProps = {
     state: CollectionActionState,
     formData: FormData,
   ) => Promise<CollectionActionState>;
+  cancelHref?: string;
   collection?: AdminCollection;
 };
-
-function FieldError({
-  errors,
-  id,
-}: {
-  errors?: string[];
-  id: string;
-}) {
-  if (!errors?.length) {
-    return null;
-  }
-
-  return (
-    <p className="admin-form__field-error" id={id}>
-      {errors[0]}
-    </p>
-  );
-}
 
 function SubmitButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
@@ -54,6 +39,7 @@ function SubmitButton({ editing }: { editing: boolean }) {
 
 export function CollectionForm({
   action,
+  cancelHref,
   collection,
 }: CollectionFormProps) {
   const [state, formAction] = useActionState(
@@ -63,36 +49,25 @@ export function CollectionForm({
   const fieldErrors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="admin-form">
-      {state.status === "error" ? (
-        <div className="admin-form__error" role="alert">
-          {state.message}
-        </div>
-      ) : null}
-
+    <AdminValidatedForm
+      action={formAction}
+      className="admin-form"
+      fieldErrors={fieldErrors}
+      formError={state.status === "error" ? state.message : undefined}
+    >
       <div className="admin-form__grid">
         <label>
           <span>ชื่อ Collection</span>
           <input
-            aria-describedby={
-              fieldErrors.name ? "collection-name-error" : undefined
-            }
             defaultValue={collection?.name}
             name="name"
             required
-          />
-          <FieldError
-            errors={fieldErrors.name}
-            id="collection-name-error"
           />
         </label>
 
         <label>
           <span>Slug</span>
           <input
-            aria-describedby={
-              fieldErrors.slug ? "collection-slug-error" : undefined
-            }
             autoCapitalize="none"
             autoCorrect="off"
             defaultValue={collection?.slug}
@@ -100,10 +75,6 @@ export function CollectionForm({
             pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
             placeholder="sevora"
             required
-          />
-          <FieldError
-            errors={fieldErrors.slug}
-            id="collection-slug-error"
           />
         </label>
 
@@ -119,19 +90,10 @@ export function CollectionForm({
         <label className="admin-form__wide">
           <span>คำอธิบาย</span>
           <textarea
-            aria-describedby={
-              fieldErrors.description
-                ? "collection-description-error"
-                : undefined
-            }
             defaultValue={collection?.description}
             name="description"
             required
             rows={6}
-          />
-          <FieldError
-            errors={fieldErrors.description}
-            id="collection-description-error"
           />
         </label>
 
@@ -145,29 +107,16 @@ export function CollectionForm({
             <option value="published">Published</option>
             <option value="archived">Archived</option>
           </select>
-          <FieldError
-            errors={fieldErrors.status}
-            id="collection-status-error"
-          />
         </label>
 
         <label>
           <span>Sort order</span>
           <input
-            aria-describedby={
-              fieldErrors.sortOrder
-                ? "collection-sort-order-error"
-                : undefined
-            }
             defaultValue={collection?.sortOrder ?? 0}
             min={0}
             name="sortOrder"
             required
             type="number"
-          />
-          <FieldError
-            errors={fieldErrors.sortOrder}
-            id="collection-sort-order-error"
           />
         </label>
 
@@ -199,8 +148,13 @@ export function CollectionForm({
       </div>
 
       <div className="admin-form__actions">
+        {cancelHref ? (
+          <Link className="admin-form__cancel" href={cancelHref}>
+            กลับไปหน้ารายการ
+          </Link>
+        ) : null}
         <SubmitButton editing={Boolean(collection)} />
       </div>
-    </form>
+    </AdminValidatedForm>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import type {
   AdminSku,
   ProductGrantOption,
@@ -17,6 +19,7 @@ type SkuFormProps = {
     state: SkuActionState,
     formData: FormData,
   ) => Promise<SkuActionState>;
+  cancelHref?: string;
   products: ProductGrantOption[];
   sku?: AdminSku;
 };
@@ -30,15 +33,17 @@ function SaveButton({ editing }: { editing: boolean }) {
   );
 }
 
-export function SkuForm({ action, products, sku }: SkuFormProps) {
+export function SkuForm({ action, cancelHref, products, sku }: SkuFormProps) {
   const [state, formAction] = useActionState(action, initialState);
   const errors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="admin-form">
-      {state.status === "error" ? (
-        <div className="admin-form__error" role="alert">{state.message}</div>
-      ) : null}
+    <AdminValidatedForm
+      action={formAction}
+      className="admin-form"
+      fieldErrors={errors}
+      formError={state.status === "error" ? state.message : undefined}
+    >
       <div className="admin-form__grid">
         <label>
           <span>ชื่อ SKU</span>
@@ -69,7 +74,6 @@ export function SkuForm({ action, products, sku }: SkuFormProps) {
             placeholder="49.00"
             required
           />
-          {errors.priceThaiBaht?.[0] ? <p className="admin-form__field-error">{errors.priceThaiBaht[0]}</p> : null}
         </label>
         <label>
           <span>ราคาเปรียบเทียบ (THB)</span>
@@ -78,7 +82,6 @@ export function SkuForm({ action, products, sku }: SkuFormProps) {
             inputMode="decimal"
             name="compareAtPriceThaiBaht"
           />
-          {errors.compareAtPriceThaiBaht?.[0] ? <p className="admin-form__field-error">{errors.compareAtPriceThaiBaht[0]}</p> : null}
         </label>
         <input name="currency" type="hidden" value="THB" />
         <label>
@@ -113,12 +116,16 @@ export function SkuForm({ action, products, sku }: SkuFormProps) {
               <span>{product.name} · {product.status}</span>
             </label>
           ))}
-          {errors.productIds?.[0] ? <p className="admin-form__field-error">{errors.productIds[0]}</p> : null}
         </fieldset>
       </div>
       <div className="admin-form__actions">
+        {cancelHref ? (
+          <Link className="admin-form__cancel" href={cancelHref}>
+            กลับไปหน้ารายการ
+          </Link>
+        ) : null}
         <SaveButton editing={Boolean(sku)} />
       </div>
-    </form>
+    </AdminValidatedForm>
   );
 }

@@ -3,10 +3,17 @@ import { describe, expect, it } from "vitest";
 import {
   parseUsername,
   parseUsernameCredentials,
+  passwordsMatch,
   toInternalAuthEmail,
 } from "./username-credentials";
 
 describe("username credentials", () => {
+  it("matches password confirmation without transforming either value", () => {
+    expect(passwordsMatch("correct-horse", "correct-horse")).toBe(true);
+    expect(passwordsMatch("correct-horse", "Correct-horse")).toBe(false);
+    expect(passwordsMatch("", "")).toBe(false);
+  });
+
   it("normalizes a valid username to lowercase", () => {
     expect(
       parseUsernameCredentials({

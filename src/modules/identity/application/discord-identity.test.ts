@@ -1,8 +1,30 @@
 import { describe, expect, it } from "vitest";
 
-import { parseDiscordIdentity } from "./discord-identity";
+import {
+  parseDiscordIdentity,
+  parseDiscordRuntimeIdentity,
+} from "./discord-identity";
 
 describe("parseDiscordIdentity", () => {
+  it("prefers a valid Discord provider ID over a UUID identity ID", () => {
+    expect(
+      parseDiscordRuntimeIdentity({
+        identity_data: {
+          full_name: "z6ixx",
+          provider_id: "240367114467147776",
+          sub: "240367114467147776",
+        },
+        identity_id: "d1fe512c-9329-4ade-856f-a0426761b8a9",
+        provider: "discord",
+      }),
+    ).toEqual({
+      avatarUrl: null,
+      email: null,
+      userId: "240367114467147776",
+      username: "z6ixx",
+    });
+  });
+
   it("extracts bounded Discord identity fields", () => {
     expect(
       parseDiscordIdentity({

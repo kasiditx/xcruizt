@@ -6,6 +6,13 @@ type IdentityLike = {
   provider_id: string;
 };
 
+type RuntimeIdentityLike = {
+  identity_data?: Record<string, unknown>;
+  identity_id?: unknown;
+  provider: string;
+  provider_id?: unknown;
+};
+
 const emailSchema = z
   .email()
   .max(254)
@@ -15,6 +22,27 @@ const avatarUrlSchema = z
   .url()
   .max(2_000)
   .refine((value) => new URL(value).protocol === "https:");
+const discordUserIdSchema = z.string().regex(/^\d{5,25}$/);
+
+export function parseDiscordRuntimeIdentity(
+  identity: RuntimeIdentityLike,
+): ReturnType<typeof parseDiscordIdentity> {
+  const data = identity.identity_data ?? {};
+  const providerId = [
+    identity.provider_id,
+    data.provider_id,
+    data.sub,
+    identity.identity_id,
+  ]
+    .map((candidate) => discordUserIdSchema.safeParse(candidate))
+    .find((candidate) => candidate.success);
+
+  return parseDiscordIdentity({
+    identity_data: identity.identity_data,
+    provider: identity.provider,
+    provider_id: providerId?.data ?? "",
+  });
+}
 
 export function parseDiscordIdentity(identity: IdentityLike): {
   avatarUrl: string | null;
@@ -24,7 +52,7 @@ export function parseDiscordIdentity(identity: IdentityLike): {
 } | null {
   if (
     identity.provider !== "discord" ||
-    !/^\d{5,25}$/.test(identity.provider_id)
+    !discordUserIdSchema.safeParse(identity.provider_id).success
   ) {
     return null;
   }

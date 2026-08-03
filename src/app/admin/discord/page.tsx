@@ -1,4 +1,6 @@
 import { AdminOperationsShell } from "@/components/admin/admin-operations-shell";
+import { AdminFeedback, AdminNotice } from "@/components/admin/admin-feedback";
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import { getDiscordGuildEnvironment } from "@/lib/env/discord";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import { listDiscordAdministration } from "@/modules/administration/infrastructure/discord-admin-repository";
@@ -54,18 +56,23 @@ export default async function AdminDiscordPage({
       title="Discord operations"
     >
       {query.notice && notices[query.notice] ? (
-        <p className="admin-notice" role="status">
-          {notices[query.notice]}
-        </p>
+        <AdminNotice
+          message={notices[query.notice]}
+          noticeCode={query.notice}
+        />
       ) : null}
       {!guildId ? (
-        <p className="admin-notice" role="alert">
-          ตั้งค่า DISCORD_GUILD_ID ก่อนสร้าง Mapping หรือรัน Worker
-        </p>
+        <AdminFeedback
+          message="ตั้งค่า DISCORD_GUILD_ID ก่อนสร้าง Mapping หรือรัน Worker"
+          tone="warning"
+        />
       ) : null}
 
       {canWriteMappings && guildId ? (
-        <form action={createDiscordMappingAction} className="admin-form">
+        <AdminValidatedForm
+          action={createDiscordMappingAction}
+          className="admin-form"
+        >
           <div className="admin-list-heading">
             <div>
               <p className="section-kicker">ROLE MAPPING</p>
@@ -107,35 +114,37 @@ export default async function AdminDiscordPage({
               </select>
             </label>
           </div>
-        </form>
+        </AdminValidatedForm>
       ) : null}
 
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <table className="admin-table admin-table--responsive">
           <thead>
             <tr>
-              <th>Role</th>
-              <th>Source</th>
-              <th>Status</th>
-              <th>Action</th>
+              <th scope="col">Role</th>
+              <th scope="col">Source</th>
+              <th scope="col">Status</th>
+              <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
             {data.mappings.map((mapping) => (
               <tr key={mapping.id}>
-                <td>
+                <td data-label="Role">
                   <strong>{mapping.discordRoleName}</strong>
                   <span>{mapping.discordRoleId}</span>
                 </td>
-                <td>{mapping.productName ?? mapping.skuName ?? "—"}</td>
-                <td>
+                <td data-label="Source">
+                  {mapping.productName ?? mapping.skuName ?? "—"}
+                </td>
+                <td data-label="Status">
                   <span
                     className={`admin-status admin-status--${mapping.isActive ? "active" : "inactive"}`}
                   >
                     {mapping.isActive ? "active" : "inactive"}
                   </span>
                 </td>
-                <td>
+                <td data-label="Action">
                   {canWriteMappings && mapping.isActive ? (
                     <form action={deactivateDiscordMappingAction}>
                       <input
@@ -167,31 +176,35 @@ export default async function AdminDiscordPage({
         </div>
       </div>
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <table className="admin-table admin-table--responsive">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Status</th>
-              <th>Attempts</th>
-              <th>Result</th>
-              <th>Action</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Status</th>
+              <th scope="col">Attempts</th>
+              <th scope="col">Result</th>
+              <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
             {data.jobs.map((job) => (
               <tr key={job.id}>
-                <td>
+                <td data-label="Customer">
                   <strong>@{job.username}</strong>
                   <span>{job.createdAt.toLocaleString("th-TH")}</span>
                 </td>
-                <td>
+                <td data-label="Status">
                   <span className={`admin-status admin-status--${job.status}`}>
                     {job.status}
                   </span>
                 </td>
-                <td>{job.attemptCount}</td>
-                <td>{job.lastError ?? (job.completedAt ? "completed" : "—")}</td>
-                <td>
+                <td className="admin-table__number" data-label="Attempts">
+                  {job.attemptCount}
+                </td>
+                <td data-label="Result">
+                  {job.lastError ?? (job.completedAt ? "completed" : "—")}
+                </td>
+                <td data-label="Action">
                   <form action={enqueueDiscordSyncAction}>
                     <input name="userId" type="hidden" value={job.userId} />
                     <button className="admin-inline-action" type="submit">

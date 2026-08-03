@@ -2,7 +2,9 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import type {
   AdminProduct,
   ProductCollectionOption,
@@ -20,23 +22,10 @@ type ProductFormProps = {
     state: ProductActionState,
     formData: FormData,
   ) => Promise<ProductActionState>;
+  cancelHref?: string;
   collections: ProductCollectionOption[];
   product?: AdminProduct;
 };
-
-function ErrorText({
-  errors,
-  id,
-}: {
-  errors?: string[];
-  id: string;
-}) {
-  return errors?.[0] ? (
-    <p className="admin-form__field-error" id={id}>
-      {errors[0]}
-    </p>
-  ) : null;
-}
 
 function SaveButton({ editing }: { editing: boolean }) {
   const { pending } = useFormStatus();
@@ -54,6 +43,7 @@ function SaveButton({ editing }: { editing: boolean }) {
 
 export function ProductForm({
   action,
+  cancelHref,
   collections,
   product,
 }: ProductFormProps) {
@@ -61,18 +51,16 @@ export function ProductForm({
   const errors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="admin-form">
-      {state.status === "error" ? (
-        <div className="admin-form__error" role="alert">
-          {state.message}
-        </div>
-      ) : null}
-
+    <AdminValidatedForm
+      action={formAction}
+      className="admin-form"
+      fieldErrors={errors}
+      formError={state.status === "error" ? state.message : undefined}
+    >
       <div className="admin-form__grid">
         <label>
           <span>ชื่อ Product</span>
           <input defaultValue={product?.name} name="name" required />
-          <ErrorText errors={errors.name} id="product-name-error" />
         </label>
 
         <label>
@@ -86,7 +74,6 @@ export function ProductForm({
             placeholder="monday-mellow"
             required
           />
-          <ErrorText errors={errors.slug} id="product-slug-error" />
         </label>
 
         <label>
@@ -102,10 +89,6 @@ export function ProductForm({
               </option>
             ))}
           </select>
-          <ErrorText
-            errors={errors.collectionId}
-            id="product-collection-error"
-          />
         </label>
 
         <label>
@@ -125,10 +108,6 @@ export function ProductForm({
             required
             rows={3}
           />
-          <ErrorText
-            errors={errors.shortDescription}
-            id="product-short-description-error"
-          />
         </label>
 
         <label className="admin-form__wide">
@@ -138,10 +117,6 @@ export function ProductForm({
             name="description"
             required
             rows={8}
-          />
-          <ErrorText
-            errors={errors.description}
-            id="product-description-error"
           />
         </label>
 
@@ -194,10 +169,6 @@ export function ProductForm({
             rows={6}
             spellCheck={false}
           />
-          <ErrorText
-            errors={errors.compatibilityJson}
-            id="product-compatibility-error"
-          />
         </label>
 
         <label>
@@ -216,8 +187,13 @@ export function ProductForm({
       </div>
 
       <div className="admin-form__actions">
+        {cancelHref ? (
+          <Link className="admin-form__cancel" href={cancelHref}>
+            กลับไปหน้ารายการ
+          </Link>
+        ) : null}
         <SaveButton editing={Boolean(product)} />
       </div>
-    </form>
+    </AdminValidatedForm>
   );
 }

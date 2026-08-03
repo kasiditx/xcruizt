@@ -21,6 +21,7 @@ import {
   signUpWithUsername,
   type PasswordAuthResult,
 } from "@/modules/identity/application/password-auth";
+import { passwordsMatch } from "@/modules/identity/application/username-credentials";
 import {
   buildAuthCallbackUrl,
 } from "@/modules/identity/application/magic-link";
@@ -121,6 +122,13 @@ export async function signUpWithPassword(
   _previousState: PasswordAuthActionState,
   formData: FormData,
 ): Promise<PasswordAuthActionState> {
+  if (!passwordsMatch(formData.get("password"), formData.get("confirmPassword"))) {
+    return {
+      status: "error",
+      message: "Password และการยืนยัน Password ต้องตรงกัน",
+    };
+  }
+
   const clientIp = extractClientIp(await headers());
   const rateLimitError = await enforcePasswordAuthRateLimit(
     "auth_signup",

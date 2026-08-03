@@ -9,6 +9,7 @@ import { buildAuthCallbackUrl } from "@/modules/identity/application/magic-link"
 import {
   getDiscordConnectionForUser,
   requestDiscordFullSyncForUser,
+  syncDiscordIdentityForAuthenticatedUser,
 } from "@/modules/identity/infrastructure/discord-profile";
 import { getCurrentAccountResolution } from "@/modules/identity/infrastructure/current-account";
 
@@ -44,6 +45,13 @@ export async function linkDiscordIdentity() {
   await requireReadyAccount("/account/discord");
 
   const supabase = await createSupabaseServerClient();
+  const syncResult = await syncDiscordIdentityForAuthenticatedUser(supabase);
+  if (syncResult === "synced") {
+    redirect(
+      "/account/discord?notice=already_linked",
+    );
+  }
+
   const redirectTo = buildAuthCallbackUrl(
     env.NEXT_PUBLIC_SITE_URL,
     "/account/discord?notice=linked",
@@ -58,7 +66,13 @@ export async function linkDiscordIdentity() {
   });
 
   if (error || !data.url) {
-    redirect("/account/discord?notice=link_failed");
+    let notice = "link_failed";
+    if (error?.code === "identity_already_exists") {
+      notice = "identity_conflict";
+    } else if (error?.code === "manual_linking_disabled") {
+      notice = "manual_linking_disabled";
+    }
+    redirect(`/account/discord?notice=${notice}`);
   }
 
   redirect(data.url);

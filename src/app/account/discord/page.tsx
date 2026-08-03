@@ -21,10 +21,16 @@ export const metadata: Metadata = {
 
 const notices: Record<string, string> = {
   already_queued: "มีงาน Sync รอทำอยู่แล้ว",
+  already_linked:
+    "Discord เชื่อมกับบัญชีนี้อยู่แล้ว ระบบอัปเดตข้อมูลและจัดคิว Role Sync ให้เรียบร้อย",
   customer_inactive: "บัญชีนี้ถูกระงับ จึงยังขอ Sync ไม่ได้",
+  identity_conflict:
+    "Discord นี้ถูกเชื่อมกับบัญชี XCRUIZT อื่นอยู่แล้ว กรุณาเข้าสู่ระบบด้วยบัญชีเดิม",
   link_failed:
     "เริ่มเชื่อม Discord ไม่สำเร็จ โปรดตรวจว่าเปิด Manual Identity Linking แล้ว",
   linked: "เชื่อม Discord แล้ว ระบบกำลังจัดคิว Role Sync",
+  manual_linking_disabled:
+    "ยังไม่ได้เปิด Manual Identity Linking ใน Supabase Auth",
   not_linked: "ยังไม่พบบัญชี Discord ที่เชื่อมอยู่",
   queued: "ส่งคำขอ Role Sync แล้ว",
   rate_limited: "ขอ Sync บ่อยเกินไป กรุณารอประมาณ 10 นาที",

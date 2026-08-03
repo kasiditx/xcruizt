@@ -3,6 +3,7 @@
 import { LogIn, UserPlus } from "lucide-react";
 import { useActionState, useState } from "react";
 
+import { ValidatedForm } from "@/components/forms/validated-form";
 import { TurnstileWidget } from "@/components/security/turnstile-widget";
 import {
   signInWithPassword,
@@ -25,6 +26,23 @@ function getSubmitLabel(isSignup: boolean, isPending: boolean) {
   return isSignup ? "สมัครและเข้าสู่ระบบ" : "เข้าสู่ระบบ";
 }
 
+function validateSignupCredentials(form: HTMLFormElement) {
+  const password = form.querySelector<HTMLInputElement>(
+    'input[name="password"]',
+  );
+  const confirmation = form.querySelector<HTMLInputElement>(
+    'input[name="confirmPassword"]',
+  );
+
+  if (password && confirmation && password.value !== confirmation.value) {
+    return {
+      confirmPassword: "Password และการยืนยัน Password ต้องตรงกัน",
+    };
+  }
+
+  return {};
+}
+
 function CredentialForm({
   mode,
   nextPath,
@@ -44,10 +62,11 @@ function CredentialForm({
   const messageId = state.message ? `${mode}-auth-message` : undefined;
 
   return (
-    <form
+    <ValidatedForm
       action={formAction}
       aria-busy={isPending}
       className="auth-form"
+      validate={isSignup ? validateSignupCredentials : undefined}
     >
       <input name="next" type="hidden" value={nextPath} />
 
@@ -55,7 +74,6 @@ function CredentialForm({
         <label htmlFor={`${mode}-username`}>Username</label>
         <input
           aria-describedby={`username-hint${messageId ? ` ${messageId}` : ""}`}
-          aria-invalid={state.status === "error"}
           autoCapitalize="none"
           autoComplete="username"
           id={`${mode}-username`}
@@ -63,7 +81,6 @@ function CredentialForm({
           minLength={3}
           name="username"
           pattern="[A-Za-z0-9_]+"
-          placeholder="pilot_07"
           required
           spellCheck={false}
           type="text"
@@ -76,18 +93,38 @@ function CredentialForm({
       <div className="auth-form__field">
         <label htmlFor={`${mode}-password`}>Password</label>
         <input
-          aria-describedby={messageId}
-          aria-invalid={state.status === "error"}
+          aria-describedby={`password-hint${messageId ? ` ${messageId}` : ""}`}
           autoComplete={isSignup ? "new-password" : "current-password"}
           id={`${mode}-password`}
           maxLength={72}
           minLength={8}
           name="password"
-          placeholder="อย่างน้อย 8 ตัว"
           required
           type="password"
         />
+        <p className="auth-form__hint" id="password-hint">
+          ใช้ Password อย่างน้อย 8 ตัว
+        </p>
       </div>
+
+      {isSignup ? (
+        <div className="auth-form__field">
+          <label htmlFor="signup-confirm-password">ยืนยัน Password</label>
+          <input
+            aria-describedby={`confirm-password-hint${messageId ? ` ${messageId}` : ""}`}
+            autoComplete="new-password"
+            id="signup-confirm-password"
+            maxLength={72}
+            minLength={8}
+            name="confirmPassword"
+            required
+            type="password"
+          />
+          <p className="auth-form__hint" id="confirm-password-hint">
+            กรอก Password เดิมอีกครั้งให้ตรงกัน
+          </p>
+        </div>
+      ) : null}
 
       {turnstileSiteKey ? (
         <TurnstileWidget
@@ -116,7 +153,7 @@ function CredentialForm({
           {state.message}
         </p>
       ) : null}
-    </form>
+    </ValidatedForm>
   );
 }
 

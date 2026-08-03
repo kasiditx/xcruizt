@@ -5,7 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { db } from "@/db/client";
 import { discordSyncJobs, profiles } from "@/db/schema";
-import { parseDiscordIdentity } from "../application/discord-identity";
+import { hasLinkedDiscordIdentity } from "../application/discord-link";
+import { parseDiscordRuntimeIdentity } from "../application/discord-identity";
 
 export async function syncDiscordIdentityForAuthenticatedUser(
   supabase: SupabaseClient,
@@ -15,32 +16,20 @@ export async function syncDiscordIdentityForAuthenticatedUser(
       supabase.auth.getUser(),
       supabase.auth.getUserIdentities(),
     ]);
-  if (userError || !userData.user || identitiesResult.error) {
+  if (userError || !userData.user) {
     return "no_discord_identity";
   }
 
-  const parsed = identitiesResult.data.identities
-    .map((identity) => {
-      const runtimeIdentity = identity as unknown as Record<
-        string,
-        unknown
-      >;
-      const providerIdCandidates = [
-        runtimeIdentity.provider_id,
-        identity.identity_id,
-        identity.identity_data?.provider_id,
-        identity.identity_data?.sub,
-      ];
-      const providerId = providerIdCandidates.find(
-        (value): value is string => typeof value === "string",
-      );
+  const identities = identitiesResult.error
+    ? (userData.user.identities ?? [])
+    : identitiesResult.data.identities;
 
-      return parseDiscordIdentity({
-        identity_data: identity.identity_data,
-        provider: identity.provider,
-        provider_id: providerId ?? "",
-      });
-    })
+  if (!hasLinkedDiscordIdentity(identities)) {
+    return "no_discord_identity";
+  }
+
+  const parsed = identities
+    .map((identity) => parseDiscordRuntimeIdentity(identity))
     .find((identity) => identity !== null);
   if (!parsed) return "no_discord_identity";
 

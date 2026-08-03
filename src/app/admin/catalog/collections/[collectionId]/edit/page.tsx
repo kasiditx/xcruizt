@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AccountControls } from "@/components/account/account-controls";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import { findAdminCollectionById } from "@/modules/catalog/infrastructure/admin-collection-repository";
 import { ADMIN_PERMISSIONS } from "@/modules/identity/domain/permissions";
@@ -48,12 +49,23 @@ export default async function EditCollectionPage({
         />
       </header>
       <section className="admin-shell admin-editor">
+        <AdminBreadcrumbs
+          items={[
+            { href: "/admin", label: "Dashboard" },
+            { href: "/admin/catalog/collections", label: "Collections" },
+            { label: collection.name },
+          ]}
+        />
         <p className="section-kicker">ADMIN / CATALOG / COLLECTIONS</p>
         <h1>Edit {collection.name}</h1>
         <p>
           การเปลี่ยนสถานะและข้อมูลทุกครั้งจะถูกบันทึกใน Admin Audit Log
         </p>
-        <CollectionForm action={action} collection={collection} />
+        <CollectionForm
+          action={action}
+          cancelHref="/admin/catalog/collections"
+          collection={collection}
+        />
       </section>
     </main>
   );

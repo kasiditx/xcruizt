@@ -26,6 +26,10 @@ describe("resolveSafeAuthRedirect", () => {
   ])("falls back for unsafe redirect %s", (candidate) => {
     expect(resolveSafeAuthRedirect(candidate)).toBe(DEFAULT_SIGNED_IN_PATH);
   });
+
+  it("uses the home page when Login has no destination", () => {
+    expect(resolveSafeAuthRedirect()).toBe("/");
+  });
 });
 
 describe("resolveLoginPageRedirect", () => {

@@ -61,8 +61,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <p className="section-kicker">ACCOUNT / SECURE ACCESS</p>
         <h1 id="login-title">บัญชี XCRUIZT</h1>
         <p>
-          ใช้ Username + Password หรือ Discord ได้ทั้ง Customer และ Admin
-          โดยสิทธิ์ Admin จะถูกตรวจจาก Database ฝั่ง Server หลังเข้าสู่ระบบ
+          เข้าสู่ระบบเพื่อดำเนินการสั่งซื้อและเข้าถึงสินค้าที่คุณเป็นเจ้าของ
         </p>
 
         <PasswordAuthForm
@@ -84,9 +83,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </button>
         </form>
 
-        <p className="auth-terms">
-          ระบบจะตรวจ Session และสิทธิ์การใช้งานจาก Server ทุกครั้ง
-        </p>
       </section>
     </main>
   );

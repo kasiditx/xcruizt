@@ -4,6 +4,8 @@ import { UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { AdminFeedback } from "@/components/admin/admin-feedback";
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import { MAX_PRODUCT_FILE_SIZE_BYTES } from "@/modules/catalog/application/file-upload-input";
 import type { AdminSkuPackageFile } from "@/modules/catalog/infrastructure/admin-file-repository";
 
@@ -119,7 +121,7 @@ export function SkuPackageFileManager({
           {" · "}ไฟล์จะ Active หลังตรวจ R2 สำเร็จ
         </p>
       </div>
-      <form action={upload} className="admin-file-upload">
+      <AdminValidatedForm action={upload} className="admin-file-upload">
         <label className="admin-file-upload__picker">
           <span>ไฟล์จริง (สูงสุด 250 MB)</span>
           <input
@@ -134,9 +136,9 @@ export function SkuPackageFileManager({
           <UploadCloud aria-hidden="true" size={17} />
           {isUploading ? "กำลังอัปโหลด…" : `Upload ${extension}`}
         </button>
-      </form>
-      {progress ? <p className="admin-notice" role="status">{progress}</p> : null}
-      {error ? <p className="admin-form__error" role="alert">{error}</p> : null}
+      </AdminValidatedForm>
+      {progress ? <AdminFeedback message={progress} tone="info" /> : null}
+      {error ? <AdminFeedback message={error} tone="error" /> : null}
       {files.length === 0 ? (
         <p className="admin-files__empty">ยังไม่มี Package file</p>
       ) : (

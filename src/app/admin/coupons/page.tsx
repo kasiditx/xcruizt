@@ -1,4 +1,6 @@
 import { AdminOperationsShell } from "@/components/admin/admin-operations-shell";
+import { AdminNotice } from "@/components/admin/admin-feedback";
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import { listAdminCoupons } from "@/modules/administration/infrastructure/coupon-admin-repository";
 import { ADMIN_PERMISSIONS } from "@/modules/identity/domain/permissions";
@@ -45,12 +47,13 @@ export default async function AdminCouponsPage({
       title="Coupons"
     >
       {query.notice && notices[query.notice] ? (
-        <p className="admin-notice" role="status">
-          {notices[query.notice]}
-        </p>
+        <AdminNotice
+          message={notices[query.notice]}
+          noticeCode={query.notice}
+        />
       ) : null}
 
-      <form action={createCouponAction} className="admin-form">
+      <AdminValidatedForm action={createCouponAction} className="admin-form">
         <div className="admin-list-heading">
           <div>
             <p className="section-kicker">PRICING / CREATE</p>
@@ -109,40 +112,44 @@ export default async function AdminCouponsPage({
             Create draft
           </button>
         </div>
-      </form>
+      </AdminValidatedForm>
 
       <div className="admin-table-wrap">
-        <table className="admin-table">
+        <table className="admin-table admin-table--responsive">
           <thead>
             <tr>
-              <th>Code</th>
-              <th>Discount</th>
-              <th>Window</th>
-              <th>Usage</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th scope="col">Code</th>
+              <th scope="col">Discount</th>
+              <th scope="col">Window</th>
+              <th scope="col">Usage</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
             {couponRows.map((coupon) => (
               <tr key={coupon.id}>
-                <td><strong>{coupon.code}</strong></td>
-                <td>{formatDiscount(coupon.discountType, coupon.discountValue)}</td>
-                <td>
-                  <span>{coupon.startsAt.toLocaleString("th-TH")}</span>
-                  <span>ถึง {coupon.endsAt.toLocaleString("th-TH")}</span>
+                <td data-label="Code"><strong>{coupon.code}</strong></td>
+                <td data-label="Discount">
+                  {formatDiscount(coupon.discountType, coupon.discountValue)}
                 </td>
-                <td>
+                <td className="admin-table__number" data-label="Window">
+                  {coupon.startsAt.toLocaleString("th-TH")}
+                  <span className="admin-table__subtext">
+                    ถึง {coupon.endsAt.toLocaleString("th-TH")}
+                  </span>
+                </td>
+                <td className="admin-table__number" data-label="Usage">
                   {coupon.redemptionCount}
                   {coupon.usageLimit ? ` / ${coupon.usageLimit}` : " / ∞"}
                   {coupon.perUserLimit ? ` · user ${coupon.perUserLimit}` : ""}
                 </td>
-                <td>
+                <td data-label="Status">
                   <span className={`admin-status admin-status--${coupon.status}`}>
                     {coupon.status}
                   </span>
                 </td>
-                <td>
+                <td data-label="Actions">
                   <div className="admin-inline-actions">
                     {coupon.status !== "active" ? (
                       <form action={updateCouponStatusAction}>

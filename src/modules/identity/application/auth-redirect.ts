@@ -1,9 +1,9 @@
-export const DEFAULT_SIGNED_IN_PATH = "/account/library";
+export const DEFAULT_SIGNED_IN_PATH = "/";
 
 const REDIRECT_BASE_URL = "https://xcruizt.invalid";
 
 export function resolveSafeAuthRedirect(
-  candidate: string | null | undefined,
+  candidate?: string | null,
 ): string {
   if (
     !candidate ||

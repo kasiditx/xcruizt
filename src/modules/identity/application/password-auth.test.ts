@@ -136,7 +136,7 @@ describe("password auth", () => {
 
     expect(result).toEqual({
       status: "success",
-      redirectPath: "/account/library",
+      redirectPath: "/",
     });
     expect(dependencies.verifyPasswordUser).toHaveBeenCalledWith({
       email: "pilot_07@users.xcruizt.invalid",

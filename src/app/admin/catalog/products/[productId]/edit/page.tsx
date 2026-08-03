@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AccountControls } from "@/components/account/account-controls";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import {
   findAdminProductById,
@@ -47,6 +48,13 @@ export default async function EditProductPage({
         <AccountControls resolution={{ account, status: "ready" }} />
       </header>
       <section className="admin-shell admin-editor">
+        <AdminBreadcrumbs
+          items={[
+            { href: "/admin", label: "Dashboard" },
+            { href: "/admin/catalog/products", label: "Products" },
+            { label: product.name },
+          ]}
+        />
         <p className="section-kicker">ADMIN / CATALOG / PRODUCTS</p>
         <h1>Edit {product.name}</h1>
         <p>
@@ -55,6 +63,7 @@ export default async function EditProductPage({
         <ProductForm
           action={updateProductAction.bind(null, product.id)}
           collections={collectionOptions}
+          cancelHref="/admin/catalog/products"
           product={product}
         />
       </section>

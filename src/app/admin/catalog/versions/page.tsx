@@ -2,6 +2,9 @@ import { FilePlus2, Pencil } from "lucide-react";
 import Link from "next/link";
 
 import { AccountControls } from "@/components/account/account-controls";
+import { AdminNotice } from "@/components/admin/admin-feedback";
+import { AdminListToolbar } from "@/components/admin/admin-list-toolbar";
+import { filterAdminRows } from "@/modules/administration/application/admin-list-filter";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import { listAdminProductVersions } from "@/modules/catalog/infrastructure/admin-product-version-repository";
 import { ADMIN_PERMISSIONS } from "@/modules/identity/domain/permissions";
@@ -17,10 +20,140 @@ const notices: Record<string, string> = {
   updated: "อัปเดต Version Draft แล้ว",
 };
 
-export default async function VersionsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
+export default async function VersionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string; q?: string; status?: string }>;
+}) {
   const account = await requireAdminPermission(ADMIN_PERMISSIONS.writeProduct);
-  const [rows, { notice }] = await Promise.all([listAdminProductVersions(), searchParams]);
-  return <main className="admin-page"><header className="account-header"><Link className="wordmark" href="/">XCRUIZT<span>®</span></Link><AccountControls resolution={{ account, status: "ready" }} /></header><section className="admin-shell"><div className="admin-list-heading"><div><p className="section-kicker">ADMIN / CATALOG</p><h1>Versions</h1><p>สร้าง Draft, ผูกไฟล์ แล้วจึง Publish เป็น Current Version</p></div><Link className="primary-action" href="/admin/catalog/versions/new"><FilePlus2 size={17} />เพิ่ม Version</Link></div>
-  {notice && notices[notice] ? <p className="admin-notice" role="status">{notices[notice]}</p> : null}
-  {rows.length === 0 ? <div className="admin-empty"><h2>ยังไม่มี Product Version</h2><p>สร้าง Product ก่อน แล้วเพิ่ม Version Draft สำหรับไฟล์จริง</p></div> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Product / Version</th><th>Status</th><th>Released</th><th>Actions</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.productName}</strong><span>{row.version}{row.isCurrent ? " · Current" : ""}</span></td><td><span className={`admin-status admin-status--${row.status}`}>{row.status}</span></td><td>{row.releasedAt?.toLocaleDateString("th-TH") ?? "—"}</td><td><div className="admin-row-actions">{row.status === "draft" ? <><Link aria-label={`แก้ไข ${row.version}`} className="admin-icon-link" href={`/admin/catalog/versions/${row.id}/edit`}><Pencil size={16} /></Link><form action={publishVersionAction}><input name="versionId" type="hidden" value={row.id} /><button className="admin-inline-action" type="submit">Publish</button></form></> : null}</div></td></tr>)}</tbody></table></div>}</section></main>;
+  const [rows, query] = await Promise.all([
+    listAdminProductVersions(),
+    searchParams,
+  ]);
+  const visibleRows = filterAdminRows({
+    getSearchText: (row) => `${row.productName} ${row.version}`,
+    getStatus: (row) => row.status,
+    query: query.q,
+    rows,
+    status: query.status,
+  });
+
+  return (
+    <main className="admin-page">
+      <header className="account-header">
+        <Link className="wordmark" href="/">
+          XCRUIZT<span>®</span>
+        </Link>
+        <AccountControls resolution={{ account, status: "ready" }} />
+      </header>
+      <section className="admin-shell">
+        <div className="admin-list-heading">
+          <div>
+            <p className="section-kicker">ADMIN / CATALOG</p>
+            <h1>Versions</h1>
+            <p>สร้าง Draft, ผูกไฟล์ แล้ว Publish เป็น Current Version</p>
+          </div>
+          <Link className="primary-action" href="/admin/catalog/versions/new">
+            <FilePlus2 aria-hidden="true" size={17} />
+            เพิ่ม Version
+          </Link>
+        </div>
+
+        {query.notice && notices[query.notice] ? (
+          <AdminNotice
+            message={notices[query.notice]}
+            noticeCode={query.notice}
+          />
+        ) : null}
+
+        <AdminListToolbar
+          action="/admin/catalog/versions"
+          query={query.q}
+          resultCount={visibleRows.length}
+          status={query.status}
+          statusOptions={[
+            { label: "Draft", value: "draft" },
+            { label: "Published", value: "published" },
+            { label: "Deprecated", value: "deprecated" },
+          ]}
+        />
+
+        {visibleRows.length === 0 ? (
+          <div className="admin-empty">
+            <h2>{rows.length === 0 ? "ยังไม่มี Product Version" : "ไม่พบ Version"}</h2>
+            <p>
+              {rows.length === 0
+                ? "สร้าง Product ก่อน แล้วเพิ่ม Version Draft สำหรับไฟล์จริง"
+                : "ลองเปลี่ยนคำค้นหาหรือสถานะ แล้วแสดงผลอีกครั้ง"}
+            </p>
+          </div>
+        ) : (
+          <div className="admin-table-wrap">
+            <table className="admin-table admin-table--catalog">
+              <thead>
+                <tr>
+                  <th scope="col">Product / Version</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Released</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleRows.map((row) => (
+                  <tr key={row.id}>
+                    <td data-label="Product / Version">
+                      {row.status === "draft" ? (
+                        <Link
+                          className="admin-table__primary-link"
+                          href={`/admin/catalog/versions/${row.id}/edit`}
+                        >
+                          <strong>{row.productName}</strong>
+                          <span>{row.version}{row.isCurrent ? " · Current" : ""}</span>
+                        </Link>
+                      ) : (
+                        <>
+                          <strong>{row.productName}</strong>
+                          <span>{row.version}{row.isCurrent ? " · Current" : ""}</span>
+                        </>
+                      )}
+                    </td>
+                    <td data-label="Status">
+                      <span className={`admin-status admin-status--${row.status}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                    <td data-label="Released">
+                      {row.releasedAt?.toLocaleDateString("th-TH") ?? "—"}
+                    </td>
+                    <td data-label="Actions">
+                      <div className="admin-row-actions">
+                        {row.status === "draft" ? (
+                          <>
+                            <Link
+                              aria-label={`แก้ไข ${row.version}`}
+                              className="admin-table-action"
+                              href={`/admin/catalog/versions/${row.id}/edit`}
+                            >
+                              <Pencil aria-hidden="true" size={16} />
+                              <span>แก้ไข</span>
+                            </Link>
+                            <form action={publishVersionAction}>
+                              <input name="versionId" type="hidden" value={row.id} />
+                              <button className="admin-inline-action" type="submit">
+                                Publish
+                              </button>
+                            </form>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </main>
+  );
 }

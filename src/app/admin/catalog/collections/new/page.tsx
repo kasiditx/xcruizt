@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AccountControls } from "@/components/account/account-controls";
+import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { requireAdminPermission } from "@/modules/administration/infrastructure/authorization";
 import { ADMIN_PERMISSIONS } from "@/modules/identity/domain/permissions";
 
@@ -32,12 +33,22 @@ export default async function NewCollectionPage() {
         />
       </header>
       <section className="admin-shell admin-editor">
+        <AdminBreadcrumbs
+          items={[
+            { href: "/admin", label: "Dashboard" },
+            { href: "/admin/catalog/collections", label: "Collections" },
+            { label: "สร้างใหม่" },
+          ]}
+        />
         <p className="section-kicker">ADMIN / CATALOG / COLLECTIONS</p>
         <h1>New Collection</h1>
         <p>
           เริ่มเป็น Draft หากข้อมูลและภาพประกอบยังไม่พร้อมเผยแพร่
         </p>
-        <CollectionForm action={createCollectionAction} />
+        <CollectionForm
+          action={createCollectionAction}
+          cancelHref="/admin/catalog/collections"
+        />
       </section>
     </main>
   );

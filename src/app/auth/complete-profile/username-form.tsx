@@ -3,6 +3,7 @@
 import { UserRoundCheck } from "lucide-react";
 import { useActionState } from "react";
 
+import { ValidatedForm } from "@/components/forms/validated-form";
 import {
   completeProfileAction,
   type CompleteProfileActionState,
@@ -21,7 +22,7 @@ export function UsernameForm({ nextPath }: { nextPath: string }) {
   const messageId = state.message ? "profile-username-message" : undefined;
 
   return (
-    <form
+    <ValidatedForm
       action={formAction}
       aria-busy={isPending}
       className="auth-form"
@@ -34,7 +35,6 @@ export function UsernameForm({ nextPath }: { nextPath: string }) {
           aria-describedby={`profile-username-hint${
             messageId ? ` ${messageId}` : ""
           }`}
-          aria-invalid={state.status === "error"}
           autoCapitalize="none"
           autoComplete="username"
           id="profile-username"
@@ -42,7 +42,6 @@ export function UsernameForm({ nextPath }: { nextPath: string }) {
           minLength={3}
           name="username"
           pattern="[A-Za-z0-9_]+"
-          placeholder="pilot_07"
           required
           spellCheck={false}
           type="text"
@@ -66,6 +65,6 @@ export function UsernameForm({ nextPath }: { nextPath: string }) {
           {state.message}
         </p>
       ) : null}
-    </form>
+    </ValidatedForm>
   );
 }

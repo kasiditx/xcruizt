@@ -4,6 +4,8 @@ import { UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { AdminFeedback } from "@/components/admin/admin-feedback";
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import { MAX_PRODUCT_FILE_SIZE_BYTES } from "@/modules/catalog/application/file-upload-input";
 import type { AdminVersionFile } from "@/modules/catalog/infrastructure/admin-file-repository";
 
@@ -132,7 +134,7 @@ export function VersionFileManager({
         </p>
       </div>
 
-      <form action={upload} className="admin-file-upload">
+      <AdminValidatedForm action={upload} className="admin-file-upload">
         <label>
           <span>File role</span>
           <select defaultValue="main_package" name="fileRole">
@@ -161,10 +163,10 @@ export function VersionFileManager({
           <UploadCloud aria-hidden="true" size={17} />
           {isUploading ? "กำลังอัปโหลด…" : "Upload to R2"}
         </button>
-      </form>
+      </AdminValidatedForm>
 
-      {progress ? <p className="admin-notice" role="status">{progress}</p> : null}
-      {error ? <p className="admin-form__error" role="alert">{error}</p> : null}
+      {progress ? <AdminFeedback message={progress} tone="info" /> : null}
+      {error ? <AdminFeedback message={error} tone="error" /> : null}
 
       {files.length === 0 ? (
         <p className="admin-files__empty">ยังไม่มีไฟล์ใน Version นี้</p>

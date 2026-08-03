@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useMemo, useState, type FormEvent } from "react";
 
+import { AdminFeedback } from "@/components/admin/admin-feedback";
+import { AdminValidatedForm } from "@/components/admin/admin-validated-form";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type Enrollment = {
@@ -134,7 +136,7 @@ export function AdminMfaPanel({
       ) : null}
 
       {factorId ? (
-        <form className="admin-mfa-form" onSubmit={verifyCode}>
+        <AdminValidatedForm className="admin-mfa-form" onSubmit={verifyCode}>
           <div>
             <p className="section-kicker">STEP 2</p>
             <h2>Verify code</h2>
@@ -146,23 +148,21 @@ export function AdminMfaPanel({
               inputMode="numeric"
               maxLength={6}
               minLength={6}
+              name="authenticatorCode"
               onChange={(event) => setCode(event.target.value)}
               pattern="[0-9]{6}"
               required
+              title="กรุณากรอกรหัสตัวเลข 6 หลัก"
               value={code}
             />
           </label>
           <button className="primary-action" disabled={busy} type="submit">
             {busy ? "กำลังตรวจสอบ…" : "ยืนยันและเข้า Admin"}
           </button>
-        </form>
+        </AdminValidatedForm>
       ) : null}
 
-      {message ? (
-        <p className="admin-form__error" role="alert">
-          {message}
-        </p>
-      ) : null}
+      {message ? <AdminFeedback message={message} tone="error" /> : null}
     </div>
   );
 }
